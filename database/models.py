@@ -19,5 +19,5 @@ class Cars(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     model = Column(String(50), nullable=False)
     year = Column(Integer, nullable=False)
-    min_price = Column(Float(10,6), nullable=False)
-    max_price = Column(Float(10,6), nullable=False)
+    min_price = Column(Float(10,2), nullable=False)
+    market_price = Column(Float(10,2), nullable=False)

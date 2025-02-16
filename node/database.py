@@ -60,6 +60,7 @@ def get_car_details(question: str) -> str:
         "and SQL result, answer the user question.\n\n"
         f'Question: {question}\n'
         f'SQL Result: {result}\n'
+        "When making answer, dont include sql query and min_price. Always use market_price."
     )
     response = llm.invoke(answer_prompt)
 

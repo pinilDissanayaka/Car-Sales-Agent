@@ -7,10 +7,14 @@ from langchain_core.output_parsers import StrOutputParser
 from node.database import get_car_details
 from node.negotiation import get_negotiation_strategy, calculate_payment_options
 from langgraph.prebuilt import ToolNode
+from database.database import engine, Base, session
+from database.models import Cars
 
 
 tools = [
-    get_car_details
+    get_car_details,
+    get_negotiation_strategy,
+
 ]
 
 tool_node = ToolNode(tools)
@@ -81,26 +85,29 @@ graph = graph_builder.compile(checkpointer=memory)
 
 
 def stream_graph_updates(user_input: str):
-    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]},
+    for event in graph.astream({"messages": [{"role": "user", "content": user_input}]},
                               config=config):
         for value in event.values():
             print("Assistant:", value["messages"][-1].content)
 
 
-while True:
-    try:
-        user_input = input("User: ")
-        if user_input.lower() in ["quit", "exit", "q"]:
-            print("Goodbye!")
-            break
+if __name__ == "__main__":
+    Base.metadata.create_all(engine)
 
-        stream_graph_updates(user_input)
-    except:
-        # fallback if input() is not available
-        user_input = "What do you know about LangGraph?"
-        print("User: " + user_input)
-        stream_graph_updates(user_input)
-        break
+    while True:
+        try:
+            user_input = input("User: ")
+            if user_input.lower() in ["quit", "exit", "q"]:
+                print("Goodbye!")
+                break
+
+            stream_graph_updates(user_input)
+        except:
+            # fallback if input() is not available
+            user_input = "What do you know about LangGraph?"
+            print("User: " + user_input)
+            stream_graph_updates(user_input)
+            break
 
 
 

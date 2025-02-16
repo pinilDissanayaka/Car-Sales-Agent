@@ -1,92 +1,76 @@
-from typing import Dict, Optional
-from pydantic import BaseModel
+from typing import  Optional
 from langchain_core.tools import tool
+from database.models import Cars
+from database.database import session
+from utils import llm
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
-class CarPricing(BaseModel):
-    model: str
-    msrp: float
-    min_price: float
-    dealer_cost: float
-    current_incentives: float = 0
-    days_in_inventory: int = 0
-
-# Sample pricing database (in real implementation, this would come from a database)
-car_pricing_db: Dict[str, CarPricing] = {
-    "2024_camry": CarPricing(
-        model="2024 Toyota Camry",
-        msrp=27000.00,
-        min_price=24500.00,
-        dealer_cost=23000.00,
-        current_incentives=1500.00,
-        days_in_inventory=45
-    ),
-    "2024_accord": CarPricing(
-        model="2024 Honda Accord",
-        msrp=28000.00,
-        min_price=25500.00,
-        dealer_cost=24000.00,
-        current_incentives=1000.00,
-        days_in_inventory=30
-    )
-}
 
 @tool
-def get_negotiation_strategy(model_id: str, customer_offer: float) -> str:
+def get_negotiation_strategy(id: int, customer_offer: float) -> str:
     """
-    Get negotiation strategy based on the car model and customer's offer.
+    Generate a negotiation strategy based on the customer offer and car details.
+
     Args:
-        model_id: The car model identifier (e.g., "2024_camry")
-        customer_offer: The customer's offered price
+        id (int): The car model identifier
+        customer_offer (float): The customer's offer price
+
+    Returns:
+        str: The negotiation strategy
     """
-    if model_id not in car_pricing_db:
-        return "Car model not found in database."
-    
-    car = car_pricing_db[model_id]
-    msrp = car.msrp
+    # Get the car details
+    car = session.query(Cars).filter(Cars.id == id).first()
+
+    # Extract the minimum and market price
     min_price = car.min_price
-    dealer_cost = car.dealer_cost
-    incentives = car.current_incentives
-    days_in_inventory = car.days_in_inventory
-    
-    # Calculate target price based on various factors
-    inventory_discount = 0
-    if days_in_inventory > 60:
-        inventory_discount = 1000
-    elif days_in_inventory > 30:
-        inventory_discount = 500
-    
-    target_price = min_price - inventory_discount - incentives
-    margin = customer_offer - dealer_cost
-    
+    market_price = car.market_price
+    print(f"min_price: {min_price}, market_price: {market_price}")
     # Generate negotiation strategy
-    if customer_offer >= target_price:
-        return (
+    if customer_offer >= min_price:
+        # Accept the offer
+        strategy = (
             f"ACCEPT OFFER: Customer offer of ${customer_offer:,.2f} is acceptable. "
-            f"Deal provides ${margin:,.2f} in margin. Proceed with closing the deal and "
+            f"Deal provides ${customer_offer:,.2f} in margin. Proceed with closing the deal and "
             f"highlight included features and warranty options."
         )
-    
-    elif customer_offer >= min_price:
-        return (
-            f"COUNTER OFFER: Customer offer of ${customer_offer:,.2f} is close. "
-            f"Counter with ${target_price:,.2f} and emphasize current incentives "
-            f"worth ${incentives:,.2f}. Highlight value features and limited-time offers."
-        )
-    
-    elif customer_offer >= dealer_cost:
-        suggested_counter = min_price - (incentives / 2)
-        return (
-            f"NEGOTIATE: Customer offer of ${customer_offer:,.2f} is below minimum. "
-            f"Counter with ${suggested_counter:,.2f}. Emphasize market value, "
-            f"vehicle quality, and available incentives. Consider offering additional services."
-        )
-    
     else:
-        return (
+        # Educate the customer on the market value
+        strategy = (
             f"EDUCATE: Customer offer of ${customer_offer:,.2f} is too low. "
-            f"Explain market value (MSRP: ${msrp:,.2f}), highlight vehicle features, "
+            f"Explain market value (MSRP: ${market_price:,.2f}), highlight vehicle features, "
             f"and demonstrate value proposition. Provide market comparison data."
         )
+
+    # Use LLM to generate the negotiation strategy
+
+    negotiation_prompt_template = """
+    Take the following negotiation strategy and rewrite it into a conversational that feels natural to a customer.
+    consider you in the chat flow.
+        Strategy: {STRATEGY}
+    Ensure the response is:
+        Clear and concise – Avoid jargon and overly technical terms.
+        Friendly and engaging – Use a warm and professional tone.
+        Persuasive but not pushy – Focus on value rather than just price.
+        Make the response feel like it’s coming from a helpful, knowledgeable salesperson who wants the best deal for the customer.
+    """
+
+    negotiation_prompt = ChatPromptTemplate.from_template(negotiation_prompt_template)
+
+    negotiation_chain = (
+        {"STRATEGY": RunnablePassthrough()} |
+        negotiation_prompt |
+        llm |
+        StrOutputParser()
+    )
+
+    strategy = negotiation_chain.invoke({"STRATEGY": strategy})
+    
+    return strategy
+
+
+
 
 @tool
 def calculate_payment_options(
