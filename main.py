@@ -14,6 +14,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langgraph.prebuilt import ToolNode
 from datetime import datetime
 import uuid
+from node.negotiation import get_negotiation_strategy, calculate_payment_options
 
 app = FastAPI()
 
@@ -48,7 +49,12 @@ class Conversation(BaseModel):
 chat_histories: Dict[str, List[Message]] = {}
 
 # Initialize the workflow
-tools = [get_car_details]
+tools = [
+    get_car_details,
+    get_negotiation_strategy,
+    calculate_payment_options
+]
+
 tool_node = ToolNode(tools)
 model_with_tools = llm.bind_tools(tools=tools)
 
@@ -184,4 +190,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, port=8000)
