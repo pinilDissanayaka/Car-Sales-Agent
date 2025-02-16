@@ -8,6 +8,7 @@ from langchain_groq.chat_models import ChatGroq
 from langchain_community.tools.sql_database.tool import QuerySQLDatabaseTool
 from utils import llm
 from langchain_core.tools import tool
+import os
 
 
 
