@@ -28,7 +28,9 @@ def get_negotiation_strategy(id: int, customer_offer: float) -> str:
     market_price = car.market_price
     print(f"min_price: {min_price}, market_price: {market_price}")
     # Generate negotiation strategy
-    if customer_offer >= min_price:
+    if customer_offer > market_price:
+        pass
+    elif customer_offer >= min_price:
         # Accept the offer
         strategy = (
             f"ACCEPT OFFER: Customer offer of ${customer_offer:,.2f} is acceptable. "
@@ -53,6 +55,7 @@ def get_negotiation_strategy(id: int, customer_offer: float) -> str:
         Clear and concise – Avoid jargon and overly technical terms.
         Friendly and engaging – Use a warm and professional tone.
         Persuasive but not pushy – Focus on value rather than just price.
+        No greetings – The response should flow naturally in an ongoing conversation.
         Make the response feel like it’s coming from a helpful, knowledgeable salesperson who wants the best deal for the customer.
     """
 
