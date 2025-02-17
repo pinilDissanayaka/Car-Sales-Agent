@@ -9,6 +9,9 @@ from langchain_community.tools.sql_database.tool import QuerySQLDatabaseTool
 from utils import llm
 from langchain_core.tools import tool
 import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 
 
@@ -24,7 +27,7 @@ def get_car_details(question: str) -> str:
         str: The response generated from the queried information.
     """
     # Establish a connection to the database
-    db = SQLDatabase.from_uri("mysql://root@localhost:3306/carsale")
+    db = SQLDatabase.from_uri(os.getenv("DATABASE_URL"))
 
     class QueryOutput(TypedDict):
         """Generated SQL query."""
