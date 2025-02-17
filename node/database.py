@@ -11,9 +11,6 @@ from langchain_core.tools import tool
 import os
 from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(find_dotenv())
-
-
 
 @tool
 def get_car_details(question: str) -> str:

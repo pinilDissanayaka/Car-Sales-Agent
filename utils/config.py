@@ -16,6 +16,7 @@ llm = ChatOpenAI(
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
+    name: str
 
 
 config={"configurable": {"thread_id": "1"}}

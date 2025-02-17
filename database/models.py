@@ -1,7 +1,8 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DECIMAL, Enum, Text, TIMESTAMP, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from database.database import Base
+from datetime import datetime
 
 
 # Define the User model
@@ -13,6 +14,7 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False)
 
 
+
 class Cars(Base):
     __tablename__ = 'cars'
 
@@ -21,3 +23,17 @@ class Cars(Base):
     year = Column(Integer, nullable=False)
     min_price = Column(Float(10,2), nullable=False)
     market_price = Column(Float(10,2), nullable=False)
+
+
+class Order(Base):
+    __tablename__ = 'orders'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    car_id = Column(Integer, ForeignKey('cars.id'), nullable=False)
+    price = Column(Float(10,2), nullable=False)  # Price at which the car was ordered
+    order_date = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="orders")
+    car = relationship("Cars", backref="orders")
+

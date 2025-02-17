@@ -4,13 +4,10 @@ from sqlalchemy.orm import sessionmaker
 import os   
 from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(find_dotenv())
 
 # Create the base class for all models
 Base = declarative_base()
 
-
-DATABASE_URL = "mysql://root@localhost:3306/carsale"
 
 # Create an engine and bind it to the base
 engine = create_engine(os.getenv("DATABASE_URL"), echo=True)

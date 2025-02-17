@@ -6,6 +6,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from node.database import get_car_details
 from node.negotiation import get_negotiation_strategy, calculate_payment_options
+from node.order import place_order
 from langgraph.prebuilt import ToolNode
 from database.database import engine, Base, session
 from database.models import Cars
@@ -14,6 +15,7 @@ from database.models import Cars
 tools = [
     get_car_details,
     get_negotiation_strategy,
+    place_order,
 
 ]
 
@@ -23,6 +25,7 @@ graph_builder = StateGraph(State)
 
 def agent(state: State):
     message = state["messages"]
+    name=state['name']
 
     llm_with_tools=llm.bind_tools(tools=tools)
 
@@ -40,20 +43,21 @@ def agent(state: State):
         - Present payment options clearly.  
         - Focus on value rather than just price.  
         - Build rapport with the customer.  
-
+    name : {NAME}
     Customer: {QUESTION}
     """
 
     prompt = ChatPromptTemplate.from_template(prompt_template)
 
     chain = (
-        {"QUESTION": RunnablePassthrough()} |
+        {"QUESTION": RunnablePassthrough(), "NAME": RunnablePassthrough()} |
         prompt |
         llm_with_tools
     )
 
     response = chain.invoke({
-        "QUESTION": message
+        "QUESTION": message,
+        "NAME" : name
     })
 
     return {"messages": [response]}
@@ -90,23 +94,6 @@ def stream_graph_updates(user_input: str):
             print("Assistant:", value["messages"][-1].content)
 
 
-if __name__ == "__main__":
-    Base.metadata.create_all(engine)
-
-    while True:
-        try:
-            user_input = input("User: ")
-            if user_input.lower() in ["quit", "exit", "q"]:
-                print("Goodbye!")
-                break
-
-            stream_graph_updates(user_input)
-        except:
-            # fallback if input() is not available
-            user_input = "What do you know about LangGraph?"
-            print("User: " + user_input)
-            stream_graph_updates(user_input)
-            break
 
 
 

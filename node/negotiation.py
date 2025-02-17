@@ -28,9 +28,7 @@ def get_negotiation_strategy(id: int, customer_offer: float) -> str:
     market_price = car.market_price
     print(f"min_price: {min_price}, market_price: {market_price}")
     # Generate negotiation strategy
-    if customer_offer > market_price:
-        pass
-    elif customer_offer >= min_price:
+    if customer_offer >= min_price:
         # Accept the offer
         strategy = (
             f"ACCEPT OFFER: Customer offer of ${customer_offer:,.2f} is acceptable. "
